@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>FinWise Pro | Balance-First Expense Tracker</title>
+    <!-- Google Fonts + Font Awesome + Chart.js CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2fa 0%, #e0e8f2 100%);
+            font-family: 'Inter', sans-serif;
+            color: #1a2c3e;
+            padding: 1.5rem;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Glass header */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1e4b6e, #2b8c6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo i {
+            color: #2b8c6e;
+            margin-right: 8px;
+        }
+
+        .balance-panel {
+            background: #1e3a47;
+            padding: 0.7rem 1.8rem;
+            border-radius: 60px;
+            color: white;
+            text-align: center;
+            min-width: 220px;
+        }
+
+        .balance-panel span {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .balance-panel h2 {
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+        }
+
+        .remaining-badge {
+            background: #2b8c6e;
+            margin-top: 5px;
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+        }
+
+        /* main grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        /* cards */
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(6px);
+            border-radius: 1.8rem;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 18px 35px -12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(43, 140, 110, 0.3);
+            padding-bottom: 0.6rem;
+        }
+
+        .card-header i {
+            font-size: 1.6rem;
+            color: #2b8c6e;
+        }
+
+        .card-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 1.2rem;
+            border: 1px solid #cbdde6;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #2b8c6e;
+            box-shadow: 0 0 0 3px rgba(43, 140, 110, 0.2);
+        }
+
+        button {
+            background: #1e5a4c;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        button:hover {
+            background: #0f4035;
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            background: #b33b2c;
+        }
+
+        .btn-danger:hover {
+            background: #8e2e21;
+        }
+
+        .btn-secondary {
+            background: #eef2f7;
+            color: #1e5a4c;
+            border: 1px solid #cbdde6;
+        }
+
+        .btn-warning {
+            background: #e6a817;
+            color: #1e3a47;
+        }
+
+        .flex-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        /* expense list */
+        .expense-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .expense-item {
+            background: #f8fbfe;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #2b8c6e;
+            flex-wrap: wrap;
+        }
+
+        .expense-category {
+            font-size: 0.7rem;
+            background: #e0ede8;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        canvas {
+            max-height: 250px;
+            width: 100%;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #eef3fa;
+            border-radius: 1rem;
+            padding: 0.6rem;
+            text-align: center;
+            flex: 1;
+        }
+
+        .alert-low {
+            background: #ffefe5;
+            border-left: 4px solid #e67e22;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <div class="glass-header">
+            <div class="logo">
+                <h1><i class="fas fa-wallet"></i> FinWise Pro · Balance Tracker</h1>
+                <div style="font-size: 0.7rem;"><i class="fas fa-chart-line"></i> Set initial balance · Track expenses ·
+                    Real insights</div>
+            </div>
+            <div class="balance-panel">
+                <span>💰 Current Balance</span>
+                <h2 id="currentBalanceDisplay">$0.00</h2>
+                <div id="remainingPercent" class="remaining-badge">0% remaining</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- SET INITIAL BALANCE + ADD EXPENSE CARD -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-coins"></i>
+                    <h2>Set Balance & Add Expense</h2>
+                </div>
+                <div class="tool-content">
+                    <label><i class="fas fa-hand-holding-usd"></i> Your Initial Balance ($)</label>
+                    <div style="display: flex; gap: 10px; margin: 5px 0 12px 0;">
+                        <input type="number" id="initialBalanceInput" placeholder="e.g., 2500" step="0.01" value="0">
+                        <button id="setBalanceBtn" class="btn-secondary"><i class="fas fa-save"></i> Set
+                            Balance</button>
+                    </div>
+                    <hr style="margin: 8px 0;">
+                    <label><i class="fas fa-receipt"></i> New Expense</label>
+                    <input type="text" id="expenseDesc" placeholder="Description (e.g., Groceries, Uber)"
+                        autocomplete="off">
+                    <div style="display: flex; gap: 10px; margin: 10px 0;">
+                        <input type="number" id="expenseAmount" placeholder="Amount ($)" step="0.01" style="flex:2;">
+                        <select id="expenseCategory" style="flex:1.5;">
+                            <option value="Food">🍔 Food</option>
+                            <option value="Transport">🚗 Transport</option>
+                            <option value="Shopping">🛍️ Shopping</option>
+                            <option value="Entertainment">🎬 Entertainment</option>
+                            <option value="Bills">💡 Bills</option>
+                            <option value="Health">💊 Health</option>
+                            <option value="Other">📦 Other</option>
+                        </select>
+                    </div>
+                    <input type="date" id="expenseDate" value="">
+                    <div class="flex-btns">
+                        <button id="addExpenseBtn"><i class="fas fa-plus-circle"></i> Add Expense</button>
+                        <button id="clearFormBtn" class="btn-secondary"><i class="fas fa-eraser"></i> Clear</button>
+                    </div>
+                    <div id="balanceWarning" class="alert-low" style="display: none;">
+                        ⚠️ Warning: This expense exceeds your current balance!
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPENSE LIST & FILTERS -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list-ul"></i>
+                    <h2>Transaction History</h2>
+                </div>
+                <div class="filter-row">
+                    <select id="filterCategory">
+                        <option value="all">All Categories</option>
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Bills">Bills</option>
+                        <option value="Health">Health</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="searchDesc" placeholder="Search description...">
+                    <button id="resetFiltersBtn" class="btn-secondary"><i class="fas fa-undo-alt"></i> Reset</button>
+                </div>
+                <div class="expense-list" id="expenseListContainer">
+                    <div class="expense-item">✨ No expenses yet. Set balance and add expenses!</div>
+                </div>
+                <div class="summary-stats">
+                    <div class="stat-card"><i class="fas fa-chart-simple"></i> <span
+                            id="totalExpenses">$0</span><br><small>Total Spent</small></div>
+                    <div class="stat-card"><i class="fas fa-layer-group"></i> <span
+                            id="expenseCount">0</span><br><small>Transactions</small></div>
+                    <div class="stat-card"><i class="fas fa-pie-chart"></i> <span
+                            id="remainingBudget">$0</span><br><small>Remaining</small></div>
+                </div>
+            </div>
+
+            <!-- CHARTS & ANALYTICS -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie"></i>
+                    <h2>Spending Analytics</h2>
+                </div>
+                <canvas id="categoryChart" width="400" height="230" style="max-height: 230px;"></canvas>
+                <div style="margin-top: 1rem;">
+                    <p><i class="fas fa-lightbulb"></i> <strong>Insight:</strong> <span id="insightText">Set your
+                            initial balance to get started.</span></p>
+                </div>
+                <div class="flex-btns" style="margin-top: 1rem;">
+                    <button id="exportDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Export CSV</button>
+                    <button id="clearAllBtn" class="btn-danger"><i class="fas fa-trash-alt"></i> Delete All
+                        Data</button>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <i class="fas fa-database"></i> Data stored locally · Balance-first tracking · Real-time updates
+        </footer>
+    </div>
+
+    <script>
+        // ---------- DATA MODEL ----------
+        let userBalance = 0;        // current remaining balance after expenses (or initial minus total spent)
+        let initialBalanceAmount = 0; // stored initial balance set by user
+        let expenses = [];          // { id, description, amount, category, date }
+
+        // DOM elements
+        const currentBalanceDisplay = document.getElementById('currentBalanceDisplay');
+        const totalExpensesSpan = document.getElementById('totalExpenses');
+        const expenseCountSpan = document.getElementById('expenseCount');
+        const remainingBudgetSpan = document.getElementById('remainingBudget');
+        const insightSpan = document.getElementById('insightText');
+        const remainingPercentSpan = document.getElementById('remainingPercent');
+        const balanceWarningDiv = document.getElementById('balanceWarning');
+        let categoryChart = null;
+
+        // Load from localStorage
+        function loadData() {
+            const storedBalance = localStorage.getItem('finwise_initial_balance');
+            if (storedBalance !== null) {
+                initialBalanceAmount = parseFloat(storedBalance);
+            } else {
+                initialBalanceAmount = 0;
+            }
+            const storedExpenses = localStorage.getItem('finwise_expenses_v2');
+            if (storedExpenses) {
+                expenses = JSON.parse(storedExpenses);
+            } else {
+                expenses = [];
+            }
+            recalculateBalance();
+            renderAll();
+        }
+
+        // Recalculate current balance based on initial amount minus sum of expenses
+        function recalculateBalance() {
+            const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            userBalance = initialBalanceAmount - totalSpent;
+            if (userBalance < 0) userBalance = -0; // show negative elegantly
+            return totalSpent;
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('finwise_initial_balance', initialBalanceAmount.toString());
+            localStorage.setItem('finwise_expenses_v2', JSON.stringify(expenses));
+        }
+
+        function updateUI() {
+            const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+            const remaining = initialBalanceAmount - totalSpent;
+            currentBalanceDisplay.innerText = `$${remaining.toFixed(2)}`;
+            totalExpensesSpan.innerText = `$${totalSpent.toFixed(2)}`;
+            expenseCountSpan.innerText = expenses.length;
+            remainingBudgetSpan.innerText = `$${remaining.toFixed(2)}`;
+
+            const percentRemaining = initialBalanceAmount > 0 ? (remaining / initialBalanceAmount) * 100 : 0;
+            let percentText = percentRemaining > 0 ? `${Math.max(0, percentRemaining).toFixed(1)}% remaining` : '0% remaining';
+            if (initialBalanceAmount === 0) percentText = 'No balance set';
+            remainingPercentSpan.innerText = percentText;
+            if (remaining < 0) remainingPercentSpan.style.background = "#b33b2c";
+            else remainingPercentSpan.style.background = "#2b8c6e";
+
+            // warning for low balance
+            if (remaining < 0) {
+                balanceWarningDiv.style.display = "flex";
+                balanceWarningDiv.innerHTML = "⚠️ CRITICAL: You've exceeded your initial balance! Please add funds or reduce expenses.";
+            } else if (remaining < initialBalanceAmount * 0.1 && initialBalanceAmount > 0) {
+                balanceWarningDiv.style.display = "flex";
+                balanceWarningDiv.innerHTML = "⚠️ Low balance warning: You have less than 10% of your initial budget remaining.";
+            } else {
+                balanceWarningDiv.style.display = "none";
+            }
+        }
+
+        // Filtered expenses for list rendering
+        function getFilteredExpenses() {
+            const categoryFilter = document.getElementById('filterCategory').value;
+            const searchText = document.getElementById('searchDesc').value.toLowerCase();
+            return expenses.filter(exp => {
+                const matchCat = categoryFilter === 'all' || exp.category === categoryFilter;
+                const matchSearch = searchText === '' || exp.description.toLowerCase().includes(searchText);
+                return matchCat && matchSearch;
+            });
+        }
+
+        function renderExpenseList() {
+            const filtered = getFilteredExpenses();
+            const container = document.getElementById('expenseListContainer');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="expense-item">📭 No expenses match the filters.</div>';
+                return;
+            }
+            let html = '';
+            filtered.forEach(exp => {
+                html += `
+                <div class="expense-item">
+                    <div>
+                        <strong>${escapeHtml(exp.description)}</strong><br>
+                        <small>📅 ${exp.date} · <span class="expense-category"><i class="fas fa-tag"></i> ${exp.category}</span></small>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-weight: 700; color: #1e5a4c;">$${exp.amount.toFixed(2)}</span>
+                        <button class="delete-expense-btn" data-id="${exp.id}" style="background:#f0eef2; color:#b33b2c; padding:0.3rem 0.8rem;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+            });
+            container.innerHTML = html;
+            document.querySelectorAll('.delete-expense-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(btn.getAttribute('data-id'));
+                    expenses = expenses.filter(exp => exp.id !== id);
+                    saveToLocal();
+                    recalculateBalance();
+                    renderAll();
+                });
+            });
+        }
+
+        function updateChart() {
+            const categoryTotals = { Food: 0, Transport: 0, Shopping: 0, Entertainment: 0, Bills: 0, Health: 0, Other: 0 };
+            expenses.forEach(exp => {
+                if (categoryTotals.hasOwnProperty(exp.category)) categoryTotals[exp.category] += exp.amount;
+                else categoryTotals.Other += exp.amount;
+            });
+            const labels = Object.keys(categoryTotals);
+            const dataValues = Object.values(categoryTotals);
+            if (categoryChart) categoryChart.destroy();
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data: dataValues, backgroundColor: ['#2b8c6e', '#e6a817', '#3b82f6', '#a855f7', '#ef4444', '#14b8a6', '#94a3b8'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            if (expenses.length === 0) insightSpan.innerText = "Add expenses to see spending insights.";
+            else {
+                let maxCat = '', maxVal = 0;
+                for (let cat in categoryTotals) if (categoryTotals[cat] > maxVal) { maxVal = categoryTotals[cat]; maxCat = cat; }
+                insightSpan.innerHTML = `Highest spending: <strong>${maxCat}</strong> ($${maxVal.toFixed(2)}). ${maxVal > 200 ? 'Consider budgeting.' : 'Keep tracking!'}`;
+            }
+        }
+
+        function renderAll() {
+            updateUI();
+            renderExpenseList();
+            updateChart();
+        }
+
+        // Set initial balance
+        function setInitialBalance() {
+            let newBalance = parseFloat(document.getElementById('initialBalanceInput').value);
+            if (isNaN(newBalance) || newBalance < 0) newBalance = 0;
+            initialBalanceAmount = newBalance;
+            recalculateBalance(); // update userBalance based on expenses sum
+            saveToLocal();
+            renderAll();
+            document.getElementById('initialBalanceInput').value = newBalance;
+        }
+
+        // Add expense (checks against balance optionally but we allow negative with warning)
+        function addExpense() {
+            const desc = document.getElementById('expenseDesc').value.trim();
+            let amount = parseFloat(document.getElementById('expenseAmount').value);
+            const category = document.getElementById('expenseCategory').value;
+            let date = document.getElementById('expenseDate').value;
+            if (!desc) { alert("Please enter a description"); return; }
+            if (isNaN(amount) || amount <= 0) { alert("Enter valid positive amount"); return; }
+            if (!date) {
+                const today = new Date().toISOString().split('T')[0];
+                date = today;
+            }
+            // check if expense would exceed balance? We allow but show warning (UI already shows)
+            const newExpense = {
+                id: Date.now(),
+                description: desc,
+                amount: amount,
+                category: category,
+                date: date
+            };
+            expenses.push(newExpense);
+            saveToLocal();
+            recalculateBalance();
+            renderAll();
+            // clear form
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDate').value = '';
+        }
+
+        function clearForm() {
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDate').value = '';
+            document.getElementById('expenseCategory').selectedIndex = 0;
+        }
+
+        function resetFilters() {
+            document.getElementById('filterCategory').value = 'all';
+            document.getElementById('searchDesc').value = '';
+            renderExpenseList();
+        }
+
+        function exportToCSV() {
+            if (expenses.length === 0) { alert("No expenses to export."); return; }
+            let csvRows = [["ID", "Description", "Amount", "Category", "Date"]];
+            expenses.forEach(exp => { csvRows.push([exp.id, exp.description, exp.amount, exp.category, exp.date]); });
+            const csvContent = csvRows.map(row => row.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `finwise_export_${new Date().toISOString().slice(0, 19)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAllData() {
+            if (confirm("⚠️ Delete ALL expenses AND reset balance to $0? This action cannot be undone.")) {
+                expenses = [];
+                initialBalanceAmount = 0;
+                saveToLocal();
+                recalculateBalance();
+                renderAll();
+                document.getElementById('initialBalanceInput').value = 0;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; });
+        }
+
+        // Event listeners
+        document.getElementById('setBalanceBtn').addEventListener('click', setInitialBalance);
+        document.getElementById('addExpenseBtn').addEventListener('click', addExpense);
+        document.getElementById('clearFormBtn').addEventListener('click', clearForm);
+        document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+        document.getElementById('exportDataBtn').addEventListener('click', exportToCSV);
+        document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+        document.getElementById('filterCategory').addEventListener('change', () => renderExpenseList());
+        document.getElementById('searchDesc').addEventListener('input', () => renderExpenseList());
+
+        // default date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('expenseDate').value = today;
+        document.getElementById('initialBalanceInput').value = '';
+
+        // initial load
+        loadData();
+        // if no balance, show suggestion
+        if (initialBalanceAmount === 0 && expenses.length === 0) {
+            insightSpan.innerText = "👉 Start by setting your initial balance (e.g., $1500) to track remaining budget.";
+        }
+    </script>
+</body>
+
+</html>
